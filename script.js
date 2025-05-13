@@ -7,7 +7,7 @@ const galleryGrid = document.querySelector(".gallery-grid");
 const modelSelect = document.getElementById("model-select");
 const countSelect = document.getElementById("count-select");
 const ratioSelect = document.getElementById("ratio-select");
-const API_KEY = "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"; // Hugging Face API Key
+const API_KEY = "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"; // Hugging Face API Key
 // Example prompts
 const examplePrompts = [
   "In the center of a lush meadow, a captivating woman gazes into a reflective basin. Her delicate features are framed by flowing golden curls, her eyes filled with a mix of curiosity and melancholy. The scene is captured in a striking painting, with rich, vibrant colors that bring the meadow to life. The woman's performance is mesmerizing, exuding an air of elegance and mystery that draws the viewer in. This enchanting image evokes a sense of timeless beauty and introspection.",
