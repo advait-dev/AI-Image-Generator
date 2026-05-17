@@ -64,40 +64,86 @@ const updateImageCard = (index, imageUrl) => {
                 </div>`;
 };
 // Send requests to Hugging Face API to create images
-const generateImages = async (selectedModel, imageCount, aspectRatio, promptText) => {
-  const MODEL_URL = `https://api-inference.huggingface.co/models/${selectedModel}`;
+const generateImages = async (
+  selectedModel,
+  imageCount,
+  aspectRatio,
+  promptText
+) => {
+  // New Hugging Face router endpoint
+  const MODEL_URL = `https://router.huggingface.co/hf-inference/models/${selectedModel}`;
+
   const { width, height } = getImageDimensions(aspectRatio);
+
   generateBtn.setAttribute("disabled", "true");
-  // Create an array of image generation promises
+
+  // Generate multiple images
   const imagePromises = Array.from({ length: imageCount }, async (_, i) => {
     try {
-      // Send request to the AI model API
       const response = await fetch(MODEL_URL, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${API_KEY}`,
           "Content-Type": "application/json",
-          "x-use-cache": "false",
         },
         body: JSON.stringify({
           inputs: promptText,
-          parameters: { width, height },
+          parameters: {
+            width,
+            height,
+          },
+          options: {
+            wait_for_model: true,
+            use_cache: false,
+          },
         }),
       });
-      if (!response.ok) throw new Error((await response.json())?.error);
-      // Convert response to an image URL and update the image card
+
+      // Handle API errors
+      if (!response.ok) {
+        let errorMessage = `HTTP ${response.status}`;
+
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch {
+          // Response may not be JSON
+        }
+
+        throw new Error(errorMessage);
+      }
+
+      // Convert binary image response to a browser URL
       const blob = await response.blob();
-      updateImageCard(i, URL.createObjectURL(blob));
+
+      // Validate response type
+      if (!blob.type.startsWith("image/")) {
+        throw new Error("Invalid response: expected an image.");
+      }
+
+      const imageUrl = URL.createObjectURL(blob);
+      updateImageCard(i, imageUrl);
     } catch (error) {
-      console.error(error);
+      console.error("Image generation failed:", error);
+
       const imgCard = document.getElementById(`img-card-${i}`);
-      imgCard.classList.replace("loading", "error");
-      imgCard.querySelector(".status-text").textContent = "Generation failed! Check console for more details.";
+      if (imgCard) {
+        imgCard.classList.replace("loading", "error");
+
+        const statusText = imgCard.querySelector(".status-text");
+        if (statusText) {
+          statusText.textContent =
+            error.message || "Generation failed! Check console for details.";
+        }
+      }
     }
   });
+
   await Promise.allSettled(imagePromises);
+
   generateBtn.removeAttribute("disabled");
 };
+
 // Create placeholder cards with loading spinners
 const createImageCards = (selectedModel, imageCount, aspectRatio, promptText) => {
   galleryGrid.innerHTML = "";
